@@ -1,0 +1,54 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: angularapp2.client/package-lock.json
+
+    - name: Install Angular dependencies
+      working-directory: ./angularapp2.client
+      run: npm ci
+
+    - name: Build Angular application
+      working-directory: ./angularapp2.client
+      run: npm run build
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+
+    - name: Build .NET application
+      run: dotnet build --configuration Release
+
+    - name: Publish .NET application
+      run: dotnet publish AngularApp2.Server/AngularApp2.Server.csproj --configuration Release --output ./publish
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          ./publish/
+          ./angularapp2.client/dist/
+        retention-days: 30
