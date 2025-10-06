@@ -29,7 +29,7 @@ jobs:
 
     - name: Install Angular dependencies
       working-directory: ./angularapp2.client
-      run: npm ci
+      run: npm i
 
     - name: Build Angular application
       working-directory: ./angularapp2.client
