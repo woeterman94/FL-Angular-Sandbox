@@ -6,5 +6,6 @@
     <ShouldRunBuildScript>false</ShouldRunBuildScript>
     <!-- Folder where production build objects will be placed -->
     <BuildOutputFolder>$(MSBuildProjectDirectory)\dist\angularapp2.client\browser\</BuildOutputFolder>
+    <BuildCommand>npm run build:prod</BuildCommand>
   </PropertyGroup>
 </Project>
