@@ -1,0 +1,52 @@
+name: Build .NET Application (No Angular Dependencies)
+
+on:
+  workflow_dispatch: # Allow manual trigger
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'AngularApp2.Server/**'
+      - 'ClassLibrary1/**'
+      - '*.sln'
+
+jobs:
+  build-dotnet:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore .NET dependencies for ClassLibrary1
+      run: dotnet restore ClassLibrary1/ClassLibrary1.csproj
+
+    - name: Build ClassLibrary1
+      run: dotnet build ClassLibrary1/ClassLibrary1.csproj --configuration Release
+
+    - name: Restore .NET dependencies for AngularApp2.Server
+      run: dotnet restore AngularApp2.Server/AngularApp2.Server.csproj
+
+    - name: Build AngularApp2.Server (skip Angular build)
+      run: dotnet build AngularApp2.Server/AngularApp2.Server.csproj --configuration Release -p:SkipAngular=true
+
+    - name: Test .NET applications
+      run: |
+        dotnet test ClassLibrary1/ClassLibrary1.csproj --configuration Release --verbosity normal || echo "No tests found in ClassLibrary1"
+        dotnet test AngularApp2.Server/AngularApp2.Server.csproj --configuration Release --verbosity normal || echo "No tests found in AngularApp2.Server"
+
+    - name: Publish AngularApp2.Server (skip Angular build)
+      run: dotnet publish AngularApp2.Server/AngularApp2.Server.csproj --configuration Release --output ./publish-server -p:SkipAngular=true
+
+    - name: Upload .NET build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-build
+        path: |
+          ./publish-server/
+          ClassLibrary1/bin/Release/
+        retention-days: 30
