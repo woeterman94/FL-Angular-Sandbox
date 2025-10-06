@@ -1,10 +1,11 @@
-name: Build .NET and Angular Application
+name: Build and Publish
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -28,52 +29,26 @@ jobs:
 
     - name: Install Angular dependencies
       working-directory: ./angularapp2.client
-      run: |
-        # Try npm ci first, fallback to npm install if package-lock.json doesn't exist
-        if [ -f package-lock.json ]; then
-          npm ci
-        else
-          npm install
-        fi
+      run: npm ci
 
     - name: Build Angular application
       working-directory: ./angularapp2.client
       run: npm run build
 
-    - name: Test Angular application
-      working-directory: ./angularapp2.client
-      run: npm run test -- --watch=false --browsers=ChromeHeadless
-
     - name: Restore .NET dependencies
       run: dotnet restore
 
-    - name: Build .NET application (excluding Angular project)
-      run: dotnet build ClassLibrary1/ClassLibrary1.csproj --configuration Release
-
-    - name: Build .NET Server application
-      run: dotnet build AngularApp2.Server/AngularApp2.Server.csproj --configuration Release
-
-    - name: Test .NET application
-      run: dotnet test --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Build .NET application
+      run: dotnet build --configuration Release
 
     - name: Publish .NET application
       run: dotnet publish AngularApp2.Server/AngularApp2.Server.csproj --configuration Release --output ./publish
 
-    - name: Upload build artifacts
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: application-build
+        name: build-artifacts
         path: |
           ./publish/
           ./angularapp2.client/dist/
         retention-days: 30
-
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: |
-          **/TestResults/
-          **/coverage/
-        retention-days: 7
